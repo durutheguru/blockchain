@@ -18,3 +18,5 @@ sha2 = "0.10.9"
 thiserror = "2.0.17"
 tokio = "1.48.0"
 zeroize = { version = "1.8.2", features = ["derive"] }
+bs58 = "0.5.1"
+ripemd = "0.1.3"

@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use super::signature::{SignatureScheme, SignatureError, PublicKey, SecretKey, Signature};
 use super::algorithm::SignatureAlgorithm;
+use crate::crypto::address::{Address, NetworkId};
 use crate::crypto::schemes::ed25519_scheme::Ed25519Scheme;
 
 /// Central manager for all signature schemes
@@ -38,6 +39,16 @@ impl SignatureManager {
         let scheme = self.schemes.get(&algorithm)
             .ok_or(SignatureError::UnsupportedAlgorithm(algorithm))?;
         scheme.generate_keypair()
+    }
+
+    pub fn generate_wallet(
+        &self,
+        algorithm: SignatureAlgorithm,
+        network: NetworkId,
+    ) -> Result<(Address, PublicKey, SecretKey), SignatureError> {
+        let (pk, sk) = self.generate_keypair(algorithm)?;
+        let address = pk.derive_address(network)?;
+        Ok((address, pk, sk))
     }
     
     pub fn sign(&self, message: &[u8], secret_key: &SecretKey) 

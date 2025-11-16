@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
+use crate::crypto::address::{Address, NetworkId};
+
 use super::algorithm::SignatureAlgorithm;
 use zeroize::Zeroize;
 
@@ -83,6 +85,10 @@ impl PublicKey {
             .map_err(|_| SignatureError::InvalidPublicKey)?;
 
         Self::new(algorithm, bytes)
+    }
+
+    pub fn derive_address(&self, network: NetworkId) -> Result<Address, SignatureError> {
+        Address::derive(self, network)
     }
 
 }
