@@ -121,3 +121,44 @@ impl std::fmt::Display for SignatureAlgorithm {
 
 }
 
+
+//// TESTS
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sizes_match_documented_values() {
+        assert_eq!(SignatureAlgorithm::Ed25519.public_key_size(), 32);
+        assert_eq!(SignatureAlgorithm::MlDsa65.signature_size(), 3293);
+        assert_eq!(SignatureAlgorithm::HybridEd25519SlhDsa128f.public_key_size(), 64);
+    }
+
+    #[test]
+    fn quantum_resistance_flags() {
+        assert!(!SignatureAlgorithm::Ed25519.is_quantum_resistant());
+        assert!(SignatureAlgorithm::SlhDsaShake256f.is_quantum_resistant());
+    }
+
+    #[test]
+    fn nist_levels_are_consistent() {
+        assert_eq!(SignatureAlgorithm::MlDsa87.nist_security_level(), 5);
+        assert_eq!(SignatureAlgorithm::SlhDsaShake128f.nist_security_level(), 1);
+    }
+
+    #[test]
+    fn to_from_u8_roundtrip() {
+        for algo in [
+            SignatureAlgorithm::Ed25519,
+            SignatureAlgorithm::MlDsa65,
+            SignatureAlgorithm::SlhDsaShake256f,
+            SignatureAlgorithm::HybridEd25519MlDsa65,
+        ] {
+            let byte = algo.to_u8();
+            assert_eq!(SignatureAlgorithm::from_u8(byte), Some(algo));
+        }
+        assert!(SignatureAlgorithm::from_u8(0xFF).is_none());
+    }
+}

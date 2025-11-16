@@ -189,3 +189,56 @@ pub trait SignatureScheme: Send + Sync {
 
 }
 
+
+//// TESTS
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_pk() -> PublicKey {
+        PublicKey::new(SignatureAlgorithm::Ed25519, vec![1u8; 32]).unwrap()
+    }
+
+    #[test]
+    fn public_key_length_validation() {
+        assert!(PublicKey::new(SignatureAlgorithm::Ed25519, vec![0u8; 31]).is_err());
+        assert!(PublicKey::new(SignatureAlgorithm::Ed25519, vec![0u8; 32]).is_ok());
+    }
+
+    #[test]
+    fn public_key_hex_roundtrip() {
+        let pk = sample_pk();
+        let hex = pk.to_hex();
+        let decoded = PublicKey::from_hex(&hex).unwrap();
+        assert_eq!(pk, decoded);
+    }
+
+    #[test]
+    fn derive_address_uses_algorithm_metadata() {
+        let pk = sample_pk();
+        let addr = pk.derive_address(NetworkId::Mainnet).unwrap();
+        assert_eq!(addr.algorithm().unwrap(), SignatureAlgorithm::Ed25519);
+    }
+
+    #[test]
+    fn signature_enforces_length_and_formats() {
+        let sig_bytes = vec![0x22; 64];
+        let sig = Signature::new(SignatureAlgorithm::Ed25519, sig_bytes).unwrap();
+        let wire = sig.to_wire_format();
+        assert_eq!(wire[0], SignatureAlgorithm::Ed25519.to_u8());
+        assert_eq!(Signature::from_wire_format(&wire).unwrap(), sig);
+
+        assert!(Signature::new(SignatureAlgorithm::Ed25519, vec![0u8; 63]).is_err());
+        let hex = sig.to_hex();
+        assert_eq!(Signature::from_hex(&hex).unwrap(), sig);
+    }
+
+    #[test]
+    fn secret_key_api_surface() {
+        let sk = SecretKey::new(SignatureAlgorithm::Ed25519, vec![0x55; 32]);
+        assert_eq!(sk.as_bytes().len(), 32);
+        assert_eq!(sk.algorithm, SignatureAlgorithm::Ed25519);
+    }
+}

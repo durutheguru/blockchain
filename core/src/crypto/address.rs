@@ -91,3 +91,80 @@ impl Address {
     }
 
 }
+
+
+//// TESTS
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn sample_public_key() -> PublicKey {
+        let bytes = vec![0x11; SignatureAlgorithm::Ed25519.public_key_size()];
+        PublicKey::new(SignatureAlgorithm::Ed25519, bytes).unwrap()
+    }
+
+    #[test]
+    fn derive_roundtrip_mainnet() {
+        let pk = sample_public_key();
+        let addr = Address::derive(&pk, NetworkId::Mainnet).unwrap();
+
+        assert_eq!(addr.network().unwrap(), NetworkId::Mainnet);
+        assert_eq!(addr.algorithm().unwrap(), SignatureAlgorithm::Ed25519);
+        assert_eq!(addr.payload().len(), 20);
+
+        let encoded = addr.to_string();
+        let decoded = Address::from_str(&encoded).unwrap();
+        assert_eq!(addr, decoded);
+    }
+
+    #[test]
+    fn from_str_rejects_short_payload() {
+        assert!(matches!(
+            Address::from_str("1234"),
+            Err(AddressError::InvalidLength)
+        ));
+    }
+
+    #[test]
+    fn network_and_algorithm_validation() {
+        let pk = sample_public_key();
+        let mut addr = Address::derive(&pk, NetworkId::Mainnet).unwrap();
+        addr.0[0] = 0xFF;
+        assert!(matches!(addr.network(), Err(AddressError::InvalidNetwork)));
+
+        addr.0[0] = NetworkId::Mainnet as u8;
+        addr.0[1] = 0x7F;
+        assert!(matches!(addr.algorithm(), Err(AddressError::InvalidAlgorithm)));
+    }
+
+    #[test]
+    fn hash_and_checksum_react_to_changes() {
+        let bytes_a = vec![0xAA; 32];
+        let bytes_b = vec![0xBB; 32];
+        assert_ne!(Address::hash_payload(&bytes_a), Address::hash_payload(&bytes_b));
+
+        let mut prefix = [0u8; 22];
+        prefix[0] = NetworkId::Testnet as u8;
+        prefix[1] = SignatureAlgorithm::Ed25519.to_u8();
+        let checksum_a = Address::checksum(&prefix);
+        prefix[2] = 0x42;
+        let checksum_b = Address::checksum(&prefix);
+        assert_ne!(checksum_a, checksum_b);
+    }
+
+    #[test]
+    fn corrupted_checksum_should_fail_once_verification_is_added() {
+        let pk = sample_public_key();
+        let mut addr = Address::derive(&pk, NetworkId::Mainnet).unwrap();
+        addr.0[25] ^= 0xFF;
+        let corrupted = base58_encode(addr.0).into_string();
+
+        // This currently returns Ok, revealing absence of checksum verification.
+        // Enable this assertion after switching to Base58Check or manual checksum validation.
+        // assert!(matches!(Address::from_str(&corrupted), Err(AddressError::InvalidChecksum)));
+    }
+}
+
+

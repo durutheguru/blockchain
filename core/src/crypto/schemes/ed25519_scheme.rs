@@ -141,4 +141,55 @@ mod tests {
         
         assert_eq!(public_key, decoded);
     }
+
+    fn scheme() -> Ed25519Scheme {
+        Ed25519Scheme::new()
+    }
+
+    #[test]
+    fn sign_rejects_wrong_algorithm() {
+        let sk = SecretKey::new(SignatureAlgorithm::MlDsa65, vec![0u8; 32]);
+        assert!(matches!(
+            scheme().sign(b"msg", &sk),
+            Err(SignatureError::AlgorithmMismatch { .. })
+        ));
+    }
+
+    #[test]
+    fn sign_rejects_invalid_secret_key_length() {
+        let sk = SecretKey::new(SignatureAlgorithm::Ed25519, vec![0u8; 31]);
+        assert!(matches!(
+            scheme().sign(b"msg", &sk),
+            Err(SignatureError::InvalidSecretKey)
+        ));
+    }
+
+    #[test]
+    fn verify_rejects_invalid_public_key() {
+        let (_pk, sk) = scheme().generate_keypair().unwrap();
+        let signature = scheme().sign(b"msg", &sk).unwrap();
+        let mut bad_pk = _pk.clone();
+        bad_pk.bytes.truncate(31);
+
+        assert!(matches!(
+            scheme().verify(b"msg", &signature, &bad_pk),
+            Err(SignatureError::InvalidPublicKey)
+        ));
+    }
+
+    #[test]
+    fn verify_rejects_invalid_signature_bytes() {
+        let (pk, sk) = scheme().generate_keypair().unwrap();
+        let mut signature = scheme().sign(b"msg", &sk).unwrap();
+        signature.bytes.truncate(10);
+        assert!(matches!(
+            scheme().verify(b"msg", &signature, &pk),
+            Err(SignatureError::InvalidSignature)
+        ));
+    }
+
+    #[test]
+    fn algorithm_accessor_matches_enum() {
+        assert_eq!(scheme().algorithm(), SignatureAlgorithm::Ed25519);
+    }
 }

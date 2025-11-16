@@ -89,10 +89,14 @@ impl Default for SignatureManager {
     }
 }
 
+
+//// TESTS
+
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_manager_basic_operations() {
         let manager = SignatureManager::new();
@@ -108,5 +112,49 @@ mod tests {
         let signature = manager.sign(message, &secret_key).unwrap();
         
         assert!(manager.verify(message, &signature, &public_key).unwrap());
+    }
+
+    #[test]
+    fn generate_wallet_returns_consistent_address() {
+        let manager = SignatureManager::new();
+        let (address, public_key, _secret) = manager
+            .generate_wallet(SignatureAlgorithm::Ed25519, NetworkId::Testnet)
+            .unwrap();
+
+        assert_eq!(address.algorithm().unwrap(), SignatureAlgorithm::Ed25519);
+        assert_eq!(address.network().unwrap(), NetworkId::Testnet);
+        assert_eq!(address, public_key.derive_address(NetworkId::Testnet).unwrap());
+    }
+
+    #[test]
+    fn unsupported_algorithm_errors() {
+        let manager = SignatureManager::new();
+        assert!(matches!(
+            manager.generate_keypair(SignatureAlgorithm::MlDsa65),
+            Err(SignatureError::UnsupportedAlgorithm(_))
+        ));
+    }
+
+    #[test]
+    fn sign_with_unregistered_scheme_fails() {
+        let manager = SignatureManager::new();
+        let secret = SecretKey::new(SignatureAlgorithm::MlDsa65, vec![0; 1952]);
+        assert!(matches!(
+            manager.sign(b"msg", &secret),
+            Err(SignatureError::UnsupportedAlgorithm(_))
+        ));
+    }
+
+    #[test]
+    fn verify_catches_algorithm_mismatch() {
+        let manager = SignatureManager::new();
+        let (pk, sk) = manager.generate_keypair(SignatureAlgorithm::Ed25519).unwrap();
+        let mut signature = manager.sign(b"msg", &sk).unwrap();
+        signature.algorithm = SignatureAlgorithm::MlDsa65;
+
+        assert!(matches!(
+            manager.verify(b"msg", &signature, &pk),
+            Err(SignatureError::AlgorithmMismatch { .. })
+        ));
     }
 }
