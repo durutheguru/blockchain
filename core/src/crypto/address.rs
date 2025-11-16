@@ -29,6 +29,7 @@ pub enum AddressError {
 
 }
 
+/// 1 byte network + 1 byte algorithm + 20-byte payload + 4-byte checksum
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Address([u8; 26]);
 
