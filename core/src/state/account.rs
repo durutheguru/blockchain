@@ -19,6 +19,9 @@ pub const EMPTY_STORAGE_ROOT: H256 = H256([
     0x01, 0x62, 0x2f, 0xb5, 0xe3, 0x63, 0xb4, 0x21,
 ]);
 
+// u64 (8) + U256 (32) + H256 (32) + H256 (32) = 104 bytes
+pub const ACCOUNT_SSZ_LENGTH: usize = 104;
+
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Account {
@@ -77,8 +80,7 @@ impl Encode for Account {
     }
 
     fn ssz_fixed_len() -> usize {
-        // u64 (8) + U256 (32) + H256 (32) + H256 (32) = 104 bytes
-        104
+        ACCOUNT_SSZ_LENGTH
     }
 
     fn ssz_bytes_len(&self) -> usize {
@@ -103,7 +105,7 @@ impl Decode for Account {
     }
 
     fn ssz_fixed_len() -> usize {
-        104
+        ACCOUNT_SSZ_LENGTH
     }
 
     fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, DecodeError> {
