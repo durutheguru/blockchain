@@ -57,32 +57,32 @@ impl Blockchain {
     }
 
     pub fn add_transaction(&mut self, sender: String, recipient: String, amount: f64) {
-        let transaction = Transaction {
-            sender,
-            recipient,
-            amount,
-        };
-        self.pending_transactions.push(transaction);
+        // let transaction = Transaction {
+        //     sender,
+        //     recipient,
+        //     amount,
+        // };
+        // self.pending_transactions.push(transaction);
     }
 
     pub fn mine_pending_transactions(&mut self, miner_address: String) {
-        let reward_transaction = Transaction {
-            sender: "System".to_string(),
-            recipient: miner_address,
-            amount: 1.0,
-        };
-        self.pending_transactions.push(reward_transaction);
+        // let reward_transaction = Transaction {
+        //     sender: "System".to_string(),
+        //     recipient: miner_address,
+        //     amount: 1.0,
+        // };
+        // self.pending_transactions.push(reward_transaction);
 
-        let previous_block = self.chain.last().unwrap().clone();
-        let mut new_block = Block::new(
-            previous_block.index + 1,
-            self.pending_transactions.clone(),
-            previous_block.hash,
-        );
+        // let previous_block = self.chain.last().unwrap().clone();
+        // let mut new_block = Block::new(
+        //     previous_block.index + 1,
+        //     self.pending_transactions.clone(),
+        //     previous_block.hash,
+        // );
 
-        new_block.mine_block(self.difficulty);
-        self.chain.push(new_block);
-        self.pending_transactions.clear();
+        // new_block.mine_block(self.difficulty);
+        // self.chain.push(new_block);
+        // self.pending_transactions.clear();
     }
 
     pub fn save_to_file(&self, filename: &str) {

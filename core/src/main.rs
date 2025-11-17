@@ -2,6 +2,7 @@
 mod crypto;
 mod block;
 mod chain;
+mod state;
 mod tx;
 
 use chain::Blockchain;

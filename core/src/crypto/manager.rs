@@ -41,7 +41,7 @@ impl SignatureManager {
         scheme.generate_keypair()
     }
 
-    pub fn generate_wallet(
+    pub fn generate_account(
         &self,
         algorithm: SignatureAlgorithm,
         network: NetworkId,
@@ -115,10 +115,10 @@ mod tests {
     }
 
     #[test]
-    fn generate_wallet_returns_consistent_address() {
+    fn generate_account_returns_consistent_address() {
         let manager = SignatureManager::new();
         let (address, public_key, _secret) = manager
-            .generate_wallet(SignatureAlgorithm::Ed25519, NetworkId::Testnet)
+            .generate_account(SignatureAlgorithm::Ed25519, NetworkId::Testnet)
             .unwrap();
 
         assert_eq!(address.algorithm().unwrap(), SignatureAlgorithm::Ed25519);
